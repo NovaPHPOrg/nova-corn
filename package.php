@@ -3,8 +3,12 @@
 use nova\plugin\corn\Schedule;
 
 return [
-  "register" => Schedule::class,
   "require" => [
    "task"
   ],
+    "config"=>[
+        "framework.start"=>[
+            Schedule::class
+        ]
+    ]
 ];
