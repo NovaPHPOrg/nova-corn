@@ -7,6 +7,8 @@ namespace nova\plugin\corn\schedule;
 
 use nova\framework\cache\Cache;
 use nova\framework\log\Logger;
+use nova\plugin\task\Task;
+use function nova\framework\dump;
 use function nova\plugin\task\go;
 
 
@@ -23,18 +25,20 @@ class TaskerServer
     {
 
         $cache = new Cache();
+
         if ($cache->get(self::SERVER_KEY) === null) {
             $cache->set(self::SERVER_KEY, getmypid(), 20);
             go(function () {
+                $key = self::SERVER_KEY;
                 $cache = new Cache();
                 do {
                     $pid = getmypid();
-                    $cache->set(self::SERVER_KEY, $pid, 15);
+                    $cache->set($key, $pid, 15);
                     TaskerManager::run();
                     sleep(10);
                     Logger::info("TaskerServer({$pid}) is running in the background");
-                } while ($cache->get(self::SERVER_KEY) === $pid);
-            });
+                } while ($cache->get($key) === $pid);
+            },0);
         }
     }
 

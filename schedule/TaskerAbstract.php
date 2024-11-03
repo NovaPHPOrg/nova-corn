@@ -28,22 +28,22 @@ abstract class TaskerAbstract
 
     /**
      * 任务被启动的时候
-     * @return mixed
+     * @return void
      */
-    abstract public function onStart(): mixed;
+    abstract public function onStart(): void;
 
     /**
      * 任务停止的时候
-     * @return mixed
+     * @return void
      */
-    abstract public function onStop(): mixed;
+    abstract public function onStop(): void;
 
     /**
      * 任务因为异常退出的时候
      * @param Throwable $e
-     * @return mixed
+     * @return void
      */
-    abstract public function onAbort(Throwable $e): mixed;
+    abstract public function onAbort(Throwable $e): void;
 
 
 }
