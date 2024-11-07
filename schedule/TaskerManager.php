@@ -149,17 +149,27 @@ class TaskerManager
                  */
                 $task = $value->closure;
                 $timeout = $task->getTimeOut();
+                $cache = new Cache();
+                if ($cache->get($value->key) !== null) {
+                    App::getInstance()->debug && Logger::info("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
+                    continue;
+                }
+                $cache->set($value->key, 1);
 
-                go(function () use ($task) {
+                $key = $value->key;
+                go(function () use ($task,$key) {
+                    $cache = new Cache();
                     try {
                         App::getInstance()->debug && Logger::info("Tasker 异步执行：" . __serialize($task));
                         $task->onStart();
                     } catch (Throwable $exception) {
+                        $cache->delete($key);
                         $task->onAbort($exception);
                         if ($exception instanceof AppExitException) {
                             throw $exception;
                         }
                     } finally {
+                        $cache->delete($key);
                         App::getInstance()->debug && Logger::info("Tasker 异步执行结束：");
                         $task->onStop();
                     }
