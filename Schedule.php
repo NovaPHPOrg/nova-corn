@@ -9,7 +9,9 @@ class Schedule
 {
     static function register(): void
     {
+
         Task::register();
+        if (php_sapi_name() == "cli")return;
         TaskerServer::start();
     }
 }
