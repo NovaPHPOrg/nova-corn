@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /*
  * Copyright (c) 2022-2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -18,12 +21,10 @@
 
 namespace nova\plugin\corn\schedule;
 
-
 use Throwable;
 
 abstract class TaskerAbstract
 {
-
     /**
      * 该任务最长的运行时间，单位秒，为0不限制
      * @return int
@@ -44,10 +45,9 @@ abstract class TaskerAbstract
 
     /**
      * 任务因为异常退出的时候
-     * @param Throwable $e
+     * @param  Throwable $e
      * @return void
      */
     abstract public function onAbort(Throwable $e): void;
-
 
 }

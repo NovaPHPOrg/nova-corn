@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /*
  * Copyright (c) 2022-2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -14,9 +17,12 @@ use nova\framework\cache\Cache;
 use nova\framework\exception\AppExitException;
 use nova\framework\log\Logger;
 use nova\plugin\corn\schedule\Cron\CronExpression;
-use Throwable;
+
 use function nova\plugin\task\__serialize;
+
 use function nova\plugin\task\go;
+
+use Throwable;
 
 /**
  * Class Tasker
@@ -27,7 +33,7 @@ use function nova\plugin\task\go;
  */
 class TaskerManager
 {
-    const string TASK_LIST = "tasker_list";
+    public const string TASK_LIST = "tasker_list";
 
     /**
      * 清空所有定时任务
@@ -40,7 +46,7 @@ class TaskerManager
 
     /**
      * 判断是否存在指定的定时任务
-     * @param $key
+     * @param       $key
      * @return bool
      */
     public static function has($key): bool
@@ -59,7 +65,7 @@ class TaskerManager
 
     /**
      * 删除指定ID的定时任务
-     * @param $key
+     * @param       $key
      * @return void
      */
     public static function del($key): void
@@ -79,11 +85,11 @@ class TaskerManager
 
     /**
      * 添加一个定时任务，与linux定时任务语法完全一致
-     * @param string $cron 定时任务时间包，使用{@link TaskerTime}来指定或手写cron字符串（不含秒数位，不支持问号）
-     * @param TaskerAbstract $taskerAbstract 需要运行的定时任务，需要继承{@link TaskerAbstract}类并实现{@link TaskerAbstract::onStart()}方法
-     * @param string $name 定时任务名称
-     * @param int $times 定时任务的执行次数，当times=-1的时候为循环任务
-     * 返回定时任务ID
+     * @param  string         $cron           定时任务时间包，使用{@link TaskerTime}来指定或手写cron字符串（不含秒数位，不支持问号）
+     * @param  TaskerAbstract $taskerAbstract 需要运行的定时任务，需要继承{@link TaskerAbstract}类并实现{@link TaskerAbstract::onStart()}方法
+     * @param  string         $name           定时任务名称
+     * @param  int            $times          定时任务的执行次数，当times=-1的时候为循环任务
+     *                                        返回定时任务ID
      * @return string
      */
     public static function add(string $cron, TaskerAbstract $taskerAbstract, string $name, int $times = 1): string
@@ -149,7 +155,7 @@ class TaskerManager
                 $value->times--;
                 App::getInstance()->debug && Logger::info("Tasker 执行完成后，下次执行时间为：" . date("Y-m-d H:i:s", $time));
                 /**
-                 * @var  TaskerAbstract $task
+                 * @var TaskerAbstract $task
                  */
                 $task = $value->closure;
                 $timeout = $task->getTimeOut();
@@ -161,7 +167,7 @@ class TaskerManager
                 $cache->set($value->key, 1);
 
                 $key = $value->key;
-                go(function () use ($task,$key) {
+                go(function () use ($task, $key) {
                     $cache = new Cache();
                     try {
                         App::getInstance()->debug && Logger::info("Tasker 异步执行：" . __serialize($task));
@@ -187,7 +193,7 @@ class TaskerManager
 
     /**
      * 获取执行时间
-     * @param $key
+     * @param      $key
      * @return int
      */
     private static function getTimes($key): int
@@ -201,7 +207,7 @@ class TaskerManager
 
     /**
      * 获取指定的定时任务
-     * @param $key
+     * @param                $key
      * @return TaskInfo|null
      */
     private static function get($key): ?TaskInfo
@@ -211,7 +217,9 @@ class TaskerManager
          * @var $value TaskInfo
          */
         foreach ($list as $value) {
-            if ($key === $value->key) return $value;
+            if ($key === $value->key) {
+                return $value;
+            }
         }
         return null;
     }
@@ -224,6 +232,5 @@ class TaskerManager
     {
         return (new Cache())->get(self::TASK_LIST, []) ?: [];
     }
-
 
 }

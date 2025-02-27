@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /*
  * Copyright (c) 2022-2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -11,15 +14,12 @@ namespace nova\plugin\corn\schedule;
 
 use nova\framework\cache\Cache;
 use nova\framework\log\Logger;
-use nova\plugin\task\Task;
-use function nova\framework\dump;
-use function nova\plugin\task\go;
 
+use function nova\plugin\task\go;
 
 class TaskerServer
 {
-
-    const string SERVER_KEY = "tasker_server";
+    public const string SERVER_KEY = "tasker_server";
 
     /**
      * 启动任务扫描服务
@@ -42,7 +42,7 @@ class TaskerServer
                     sleep(10);
                     Logger::info("TaskerServer({$pid}) is running in the background");
                 } while ($cache->get($key) === $pid);
-            },0);
+            }, 0);
         }
     }
 

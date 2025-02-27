@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -30,12 +33,12 @@ use RuntimeException;
  */
 class CronExpression
 {
-    const MINUTE = 0;
-    const HOUR = 1;
-    const DAY = 2;
-    const MONTH = 3;
-    const WEEKDAY = 4;
-    const YEAR = 5;
+    public const MINUTE = 0;
+    public const HOUR = 1;
+    public const DAY = 2;
+    public const MONTH = 3;
+    public const WEEKDAY = 4;
+    public const YEAR = 5;
     /**
      * @var array Order in which to test of cron parts
      */
@@ -56,7 +59,7 @@ class CronExpression
     /**
      * Parse a CRON expression
      *
-     * @param string $expression CRON expression (e.g. '8 * * * *')
+     * @param string       $expression   CRON expression (e.g. '8 * * * *')
      * @param FieldFactory $fieldFactory Factory to create cron fields
      */
     public function __construct($expression, FieldFactory $fieldFactory)
@@ -92,8 +95,8 @@ class CronExpression
     /**
      * Set part of the CRON expression
      *
-     * @param int $position The position of the CRON expression to set
-     * @param string $value The value to set
+     * @param int    $position The position of the CRON expression to set
+     * @param string $value    The value to set
      *
      * @return CronExpression
      * @throws InvalidArgumentException if the value is not valid for the part
@@ -181,11 +184,11 @@ class CronExpression
     /**
      * Get a previous run date relative to the current date or a specific date
      *
-     * @param string|DateTime $currentTime Relative calculation date
-     * @param int $nth Number of matches to skip before returning
-     * @param bool $allowCurrentDate Set to TRUE to return the
-     *                                           current date if it matches the cron expression
-     * @param null|string $timeZone Timezone to use instead of the system default
+     * @param string|DateTime $currentTime      Relative calculation date
+     * @param int             $nth              Number of matches to skip before returning
+     * @param bool            $allowCurrentDate Set to TRUE to return the
+     *                                          current date if it matches the cron expression
+     * @param null|string     $timeZone         Timezone to use instead of the system default
      *
      * @return DateTime
      * @throws RuntimeException on too many iterations
@@ -199,12 +202,12 @@ class CronExpression
     /**
      * Get the next or previous run date of the expression relative to a date
      *
-     * @param string|DateTime $currentTime Relative calculation date
-     * @param int $nth Number of matches to skip before returning
-     * @param bool $invert Set to TRUE to go backwards in time
-     * @param bool $allowCurrentDate Set to TRUE to return the
-     *                                           current date if it matches the cron expression
-     * @param string|null $timeZone Timezone to use instead of the system default
+     * @param string|DateTime $currentTime      Relative calculation date
+     * @param int             $nth              Number of matches to skip before returning
+     * @param bool            $invert           Set to TRUE to go backwards in time
+     * @param bool            $allowCurrentDate Set to TRUE to return the
+     *                                          current date if it matches the cron expression
+     * @param string|null     $timeZone         Timezone to use instead of the system default
      *
      * @return DateTime
      * @throws RuntimeException on too many iterations
@@ -304,12 +307,12 @@ class CronExpression
     /**
      * Get multiple run dates starting at the current date or a specific date
      *
-     * @param int $total Set the total number of dates to calculate
-     * @param string|DateTime $currentTime Relative calculation date
-     * @param bool $invert Set to TRUE to retrieve previous dates
-     * @param bool $allowCurrentDate Set to TRUE to return the
-     *                                           current date if it matches the cron expression
-     * @param null|string $timeZone Timezone to use instead of the system default
+     * @param int             $total            Set the total number of dates to calculate
+     * @param string|DateTime $currentTime      Relative calculation date
+     * @param bool            $invert           Set to TRUE to retrieve previous dates
+     * @param bool            $allowCurrentDate Set to TRUE to return the
+     *                                          current date if it matches the cron expression
+     * @param null|string     $timeZone         Timezone to use instead of the system default
      *
      * @return array Returns an array of run dates
      */
@@ -343,7 +346,7 @@ class CronExpression
      * seconds are irrelevant, and should be called once per minute.
      *
      * @param string|DateTime $currentTime Relative calculation date
-     * @param null|string $timeZone Timezone to use instead of the system default
+     * @param null|string     $timeZone    Timezone to use instead of the system default
      *
      * @return bool Returns TRUE if the cron is due to run or FALSE if not
      */
@@ -384,16 +387,16 @@ class CronExpression
     /**
      * Get a next run date relative to the current date or a specific date
      *
-     * @param string|DateTime $currentTime Relative calculation date
-     * @param int $nth Number of matches to skip before returning a
-     *                                           matching next run date.  0, the default, will return the current
-     *                                           date and time if the next run date falls on the current date and
-     *                                           time.  Setting this value to 1 will skip the first match and go to
-     *                                           the second match.  Setting this value to 2 will skip the first 2
-     *                                           matches and so on.
-     * @param bool $allowCurrentDate Set to TRUE to return the current date if
-     *                                           it matches the cron expression.
-     * @param null|string $timeZone Timezone to use instead of the system default
+     * @param string|DateTime $currentTime      Relative calculation date
+     * @param int             $nth              Number of matches to skip before returning a
+     *                                          matching next run date.  0, the default, will return the current
+     *                                          date and time if the next run date falls on the current date and
+     *                                          time.  Setting this value to 1 will skip the first match and go to
+     *                                          the second match.  Setting this value to 2 will skip the first 2
+     *                                          matches and so on.
+     * @param bool            $allowCurrentDate Set to TRUE to return the current date if
+     *                                          it matches the cron expression.
+     * @param null|string     $timeZone         Timezone to use instead of the system default
      *
      * @return DateTime
      * @throws RuntimeException on too many iterations

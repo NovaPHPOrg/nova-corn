@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types=1);
+
 /*
  * Copyright (c) 2025. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
  * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
@@ -14,11 +17,13 @@ use nova\plugin\task\Task;
 
 class Schedule
 {
-    static function register(): void
+    public static function register(): void
     {
 
         Task::register();
-        if (php_sapi_name() == "cli")return;
+        if (php_sapi_name() == "cli") {
+            return;
+        }
         TaskerServer::start();
     }
 }
