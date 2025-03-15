@@ -76,7 +76,7 @@ abstract class AbstractField implements FieldInterface
      */
     public function isIncrementsOfRanges($value)
     {
-        return strpos($value, '/') !== false;
+        return str_contains($value, '/');
     }
 
     /**
@@ -91,7 +91,7 @@ abstract class AbstractField implements FieldInterface
     {
         $chunks = array_map('trim', explode('/', $value, 2));
         $range = $chunks[0];
-        $step = isset($chunks[1]) ? $chunks[1] : 0;
+        $step = $chunks[1] ?? 0;
 
         // No step or 0 steps aren't cool
         if (is_null($step) || '0' === $step || 0 === $step) {

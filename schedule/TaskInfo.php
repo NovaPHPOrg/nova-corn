@@ -21,13 +21,30 @@ declare(strict_types=1);
 
 namespace nova\plugin\corn\schedule;
 
+use Closure;
+
+/**
+ * Task information data transfer object
+ */
 class TaskInfo
 {
-    public string $key = "";//任务ID
-    public string $name = "";//任务名称
-    public string $cron = '';
-    public int $next = 0;//下次的执行时间
-    public bool $loop = false;//是否循环
-    public int $times = 0;//循环次数
-    public $closure;//序列化的执行事件
+    /**
+     * @param string              $key     Task ID
+     * @param string              $name    Task name
+     * @param string              $cron    Cron expression
+     * @param int                 $next    Next execution time (timestamp)
+     * @param bool                $loop    Whether to loop
+     * @param int                 $times   Number of iterations
+     * @param TaskerAbstract|null $closure Task execution closure
+     */
+    public function __construct(
+        public string $key = "",
+        public string $name = "",
+        public string $cron = "",
+        public int $next = 0,
+        public bool $loop = false,
+        public int $times = 0,
+        public ?TaskerAbstract $closure = null
+    ) {
+    }
 }

@@ -13,9 +13,13 @@ declare(strict_types=1);
 namespace nova\plugin\corn\schedule;
 
 use nova\framework\cache\Cache;
-use nova\framework\log\Logger;
 
+use nova\framework\core\Logger;
+
+use function nova\framework\isWorkerman;
 use function nova\plugin\task\go;
+
+use Workerman\Timer;
 
 class TaskerServer
 {
@@ -27,21 +31,32 @@ class TaskerServer
      */
     public static function start(): void
     {
-
         $cache = new Cache();
 
         if ($cache->get(self::SERVER_KEY) === null) {
+            Logger::info("No TaskerServer is running, start a new one");
             $cache->set(self::SERVER_KEY, getmypid(), 20);
             go(function () {
                 $key = self::SERVER_KEY;
                 $cache = new Cache();
-                do {
-                    $pid = getmypid();
-                    $cache->set($key, $pid, 15);
-                    TaskerManager::run();
-                    sleep(10);
-                    Logger::info("TaskerServer({$pid}) is running in the background");
-                } while ($cache->get($key) === $pid);
+
+                if (isWorkerman()) {
+                    Timer::add(10, function () use ($key, $cache) {
+                        $pid = getmypid();
+                        $cache->set($key, $pid, 15);
+                        TaskerManager::run();
+                        Logger::info("TaskerServer({$pid}) is running in the background");
+                    });
+                } else {
+                    do {
+                        $pid = getmypid();
+                        $cache->set($key, $pid, 15);
+                        TaskerManager::run();
+                        sleep(10);
+                        Logger::info("TaskerServer({$pid}) is running in the background");
+                    } while ($cache->get($key) === $pid);
+                }
+
             }, 0);
         }
     }

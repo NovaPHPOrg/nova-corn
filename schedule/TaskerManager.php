@@ -12,10 +12,10 @@ declare(strict_types=1);
 
 namespace nova\plugin\corn\schedule;
 
-use nova\framework\App;
 use nova\framework\cache\Cache;
+use nova\framework\core\Context;
+use nova\framework\core\Logger;
 use nova\framework\exception\AppExitException;
-use nova\framework\log\Logger;
 use nova\plugin\corn\schedule\Cron\CronExpression;
 
 use function nova\plugin\task\__serialize;
@@ -126,7 +126,7 @@ class TaskerManager
         $list[] = $task;
 
         (new Cache())->set(self::TASK_LIST, $list);
-        if (App::getInstance()->debug) {
+        if (Context::instance()->isDebug()) {
             Logger::info("Tasker 添加定时任务：$name => " . get_class($taskerAbstract));
             Logger::info("Tasker 初次添加后，执行时间为：" . date("Y-m-d H:i:s", $task->next));
         }
@@ -147,13 +147,13 @@ class TaskerManager
         foreach ($data as $k => $value) {
             //次序=0
             if ($value->times === 0) {
-                App::getInstance()->debug && Logger::info("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务执行完毕");
+                Context::instance()->isDebug() && Logger::info("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务执行完毕");
                 unset($data[$k]);
             } elseif ($value->next <= time()) {
                 $time = CronExpression::factory($value->cron)->getNextRunDate()->getTimestamp();
                 $value->next = $time;
                 $value->times--;
-                App::getInstance()->debug && Logger::info("Tasker 执行完成后，下次执行时间为：" . date("Y-m-d H:i:s", $time));
+                Context::instance()->isDebug() && Logger::info("Tasker 执行完成后，下次执行时间为：" . date("Y-m-d H:i:s", $time));
                 /**
                  * @var TaskerAbstract $task
                  */
@@ -161,7 +161,7 @@ class TaskerManager
                 $timeout = $task->getTimeOut();
                 $cache = new Cache();
                 if ($cache->get($value->key) !== null) {
-                    App::getInstance()->debug && Logger::info("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
+                    Context::instance()->isDebug() && Logger::info("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
                     continue;
                 }
                 $cache->set($value->key, 1);
@@ -170,7 +170,7 @@ class TaskerManager
                 go(function () use ($task, $key) {
                     $cache = new Cache();
                     try {
-                        App::getInstance()->debug && Logger::info("Tasker 异步执行：" . __serialize($task));
+                        Context::instance()->isDebug() && Logger::info("Tasker 异步执行：" . __serialize($task));
                         $task->onStart();
                     } catch (Throwable $exception) {
                         $cache->delete($key);
@@ -180,7 +180,7 @@ class TaskerManager
                         }
                     } finally {
                         $cache->delete($key);
-                        App::getInstance()->debug && Logger::info("Tasker 异步执行结束：");
+                        Context::instance()->isDebug() && Logger::info("Tasker 异步执行结束：");
                         $task->onStop();
                     }
 

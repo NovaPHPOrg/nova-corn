@@ -12,6 +12,8 @@ declare(strict_types=1);
 
 namespace nova\plugin\corn;
 
+use function nova\framework\isCli;
+
 use nova\plugin\corn\schedule\TaskerServer;
 use nova\plugin\task\Task;
 
@@ -21,7 +23,7 @@ class Schedule
     {
 
         Task::register();
-        if (php_sapi_name() == "cli") {
+        if (isCli()) {
             return;
         }
         TaskerServer::start();
