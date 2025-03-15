@@ -15,7 +15,7 @@ return [
         "task"
     ],
     "config" => [
-        "framework.start" => [
+        "framework_start" => [
             "nova\\plugin\\corn\\Schedule"
         ]
     ]
