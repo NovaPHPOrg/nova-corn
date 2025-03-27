@@ -60,7 +60,7 @@ class MinutesField extends AbstractField
             $date->modify(($invert ? '-' : '+') . '1 hour');
             $date->setTime((int)$date->format('H'), $invert ? 59 : 0);
         } else {
-            $date->setTime((int)$date->format('H'), $minutes[$position]);
+            $date->setTime((int)$date->format('H'), (int)$minutes[$position]);
         }
 
         return $this;
