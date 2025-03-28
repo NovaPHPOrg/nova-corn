@@ -106,13 +106,13 @@ abstract class AbstractField implements FieldInterface
         // Generate the requested small range
         $rangeChunks = explode('-', $range, 2);
         $rangeStart = $rangeChunks[0];
-        $rangeEnd = isset($rangeChunks[1]) ? $rangeChunks[1] : $rangeStart;
+        $rangeEnd = $rangeChunks[1] ?? $rangeStart;
 
         if ($rangeStart < $this->rangeStart || $rangeStart > $this->rangeEnd || $rangeStart > $rangeEnd) {
             throw new OutOfRangeException('Invalid range start requested');
         }
 
-        if ($rangeEnd < $this->rangeStart || $rangeEnd > $this->rangeEnd || $rangeEnd < $rangeStart) {
+        if ($rangeEnd < $this->rangeStart || $rangeEnd > $this->rangeEnd) {
             throw new OutOfRangeException('Invalid range end requested');
         }
 
@@ -120,7 +120,7 @@ abstract class AbstractField implements FieldInterface
             throw new OutOfRangeException('Step cannot be greater than total range');
         }
 
-        $thisRange = range($rangeStart, $rangeEnd, $step);
+        $thisRange = range((int)$rangeStart, (int)$rangeEnd, (int)$step);
 
         return in_array($dateValue, $thisRange);
     }

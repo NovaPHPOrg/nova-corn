@@ -12,17 +12,19 @@ declare(strict_types=1);
 
 namespace nova\plugin\corn;
 
+use nova\framework\core\StaticRegister;
+use nova\plugin\task\Task;
 use function nova\framework\isCli;
 
 use nova\plugin\corn\schedule\TaskerServer;
-use nova\plugin\task\Task;
 
-class Schedule
+class Schedule extends StaticRegister
 {
-    public static function register(): void
+    public static function registerInfo(): void
     {
 
         Task::register();
+
         if (isCli()) {
             return;
         }

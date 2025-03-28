@@ -141,6 +141,9 @@ class TaskerManager
     {
 
         $data = self::list();
+        if (Context::instance()->isDebug()) {
+            Logger::info("task list",$data);
+        }
         /**
          * @var $value TaskInfo
          */
