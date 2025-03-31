@@ -12,7 +12,6 @@ declare(strict_types=1);
 
 namespace nova\plugin\corn\schedule;
 
-use nova\framework\cache\Cache;
 use nova\framework\core\Context;
 use nova\framework\core\Logger;
 use nova\framework\exception\AppExitException;
@@ -41,7 +40,7 @@ class TaskerManager
      */
     public static function clean(): void
     {
-        (new Cache())->delete(self::TASK_LIST);
+        Context::instance()->cache->delete(self::TASK_LIST);
     }
 
     /**
@@ -80,7 +79,7 @@ class TaskerManager
                 $new[] = $value;
             }
         }
-        (new Cache())->set(self::TASK_LIST, $new);
+        Context::instance()->cache->set(self::TASK_LIST, $new);
     }
 
     /**
@@ -125,7 +124,7 @@ class TaskerManager
         $list = self::list();
         $list[] = $task;
 
-        (new Cache())->set(self::TASK_LIST, $list);
+        Context::instance()->cache->set(self::TASK_LIST, $list);
         if (Context::instance()->isDebug()) {
             Logger::info("Tasker 添加定时任务：$name => " . get_class($taskerAbstract));
             Logger::info("Tasker 初次添加后，执行时间为：" . date("Y-m-d H:i:s", $task->next));
@@ -162,7 +161,7 @@ class TaskerManager
                  */
                 $task = $value->closure;
                 $timeout = $task->getTimeOut();
-                $cache = new Cache();
+                $cache = Context::instance()->cache;
                 if ($cache->get($value->key) !== null) {
                     Context::instance()->isDebug() && Logger::info("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
                     continue;
@@ -171,7 +170,7 @@ class TaskerManager
 
                 $key = $value->key;
                 go(function () use ($task, $key) {
-                    $cache = new Cache();
+                    $cache = Context::instance()->cache;
                     try {
                         Context::instance()->isDebug() && Logger::info("Tasker 异步执行：" . __serialize($task));
                         $task->onStart();
@@ -190,7 +189,7 @@ class TaskerManager
                 }, $timeout);
             }
         }
-        (new Cache())->set(self::TASK_LIST, $data);
+        Context::instance()->cache->set(self::TASK_LIST, $data);
 
     }
 
@@ -233,7 +232,7 @@ class TaskerManager
      */
     public static function list(): array
     {
-        return (new Cache())->get(self::TASK_LIST, []) ?: [];
+        return Context::instance()->cache->get(self::TASK_LIST, []) ?: [];
     }
 
 }
