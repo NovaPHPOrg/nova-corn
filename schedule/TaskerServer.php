@@ -31,22 +31,23 @@ class TaskerServer
     public static function start(): void
     {
         $cache = Context::instance()->cache;
-
+        $key = self::SERVER_KEY;
         if ($cache->get(self::SERVER_KEY) === null) {
             Logger::info("No TaskerServer is running, start a new one");
             $cache->set(self::SERVER_KEY, getmypid(), 20);
-            go(function () {
-                $key = self::SERVER_KEY;
-                $cache = Context::instance()->cache;
+            if (isWorkerman()) {
+                Timer::add(10, function () use ($key, $cache) {
+                    $pid = getmypid();
+                    $cache->set($key, $pid, 15);
+                    Context::instance()->cache = $cache;
+                    TaskerManager::run();
+                    Logger::info("TaskerServer({$pid}) is running in the background");
+                });
+            }else{
+                go(function ()use ($key) {
 
-                if (isWorkerman()) {
-                    Timer::add(10, function () use ($key, $cache) {
-                        $pid = getmypid();
-                        $cache->set($key, $pid, 15);
-                        TaskerManager::run();
-                        Logger::info("TaskerServer({$pid}) is running in the background");
-                    });
-                } else {
+                    $cache = Context::instance()->cache;
+
                     do {
                         $pid = getmypid();
                         $cache->set($key, $pid, 15);
@@ -54,9 +55,8 @@ class TaskerServer
                         sleep(10);
                         Logger::info("TaskerServer({$pid}) is running in the background");
                     } while ($cache->get($key) === $pid);
-                }
-
-            }, 0);
+                }, 0);
+            }
         }
     }
 
