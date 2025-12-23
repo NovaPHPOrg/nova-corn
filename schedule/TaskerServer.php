@@ -43,8 +43,8 @@ class TaskerServer
                     TaskerManager::run();
                     Logger::info("TaskerServer({$pid}) is running in the background");
                 });
-            }else{
-                go(function ()use ($key) {
+            } else {
+                go(function () use ($key) {
 
                     $cache = Context::instance()->cache;
 
