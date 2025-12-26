@@ -177,6 +177,7 @@ class TaskerManager
                     } catch (Throwable $exception) {
                         $cache->delete($key);
                         $task->onAbort($exception);
+                        Logger::error($exception->getMessage(), $exception->getTrace());
                         if ($exception instanceof AppExitException) {
                             throw $exception;
                         }
