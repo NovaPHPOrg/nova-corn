@@ -24,6 +24,22 @@ namespace nova\plugin\corn\schedule;
 class TaskerTime
 {
     /**
+     * 指定多少秒之后执行（实际只能精确到分钟）
+     * @param  int    $seconds
+     * @return string
+     */
+    public static function after(int $seconds): string
+    {
+        $time = time() + $seconds;
+
+        return
+            (int)date('i', $time) . ' ' .
+            (int)date('H', $time) . ' ' .
+            (int)date('d', $time) . ' ' .
+            (int)date('m', $time) . ' *';
+    }
+
+    /**
      * 每天【{@link $hour}时{@link $mintue}分】执行任务
      * @param         $hour   int 小时
      * @param         $minute int 分钟
