@@ -213,7 +213,7 @@ class TaskerManager
      * @param                $key
      * @return TaskInfo|null
      */
-    private static function get($key): ?TaskInfo
+    public static function get($key): ?TaskInfo
     {
         $list = self::list();
         /**
@@ -221,6 +221,20 @@ class TaskerManager
          */
         foreach ($list as $value) {
             if ($key === $value->key) {
+                return $value;
+            }
+        }
+        return null;
+    }
+
+    public static function getByName($name): ?TaskInfo
+    {
+        $list = self::list();
+        /**
+         * @var $value TaskInfo
+         */
+        foreach ($list as $value) {
+            if ($name === $value->name) {
                 return $value;
             }
         }
