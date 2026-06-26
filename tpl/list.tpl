@@ -25,6 +25,8 @@
         <div class="col-xs-12 title-large center-vertical mb-4">
             <mdui-icon name="schedule" class="mr-2"></mdui-icon>
             <span>定时任务</span>
+            <div style="flex-grow: 1"></div>
+            <mdui-button-icon icon="refresh" id="refreshTable" variant="outlined"></mdui-button-icon>
         </div>
 
 

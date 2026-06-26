@@ -12,8 +12,7 @@ window.pageOnLoad = function () {
         height: 'auto',
         lineHeight: 'auto',
         mobile: true,
-        page: true,
-        pageSizes: [10, 20, 50, 100],
+        page: false,
         selectable: false,
         break: false,
         columns: [
@@ -71,6 +70,10 @@ window.pageOnLoad = function () {
                 },
             },
         ],
+    });
+
+    $('#refreshTable').on('click', function () {
+        orderTable.reload({}, true);
     });
 
     window.pageOnUnLoad = function () {
