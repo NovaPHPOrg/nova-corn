@@ -4,15 +4,7 @@ window.pageLoadFiles = [
 ];
 
 window.pageOnLoad = function () {
-    $.request.get('/corn/api/list', {}, function (res) {
-        if (res.code !== 200 || !res.server) {
-            return;
-        }
-        const status = res.server.running
-            ? '调度服务运行中 (PID: ' + res.server.pid + ')'
-            : '调度服务未运行';
-        $('#cornStatus').text(status);
-    });
+
 
     const orderTable = new DataTable('#dataTable');
     orderTable.load({
@@ -25,12 +17,7 @@ window.pageOnLoad = function () {
         selectable: false,
         break: false,
         columns: [
-            {
-                field: 'key',
-                name: '任务ID',
-                align: 'center',
-                width: "100px",
-            },
+
             {
                 field: 'name',
                 name: '任务名称',
@@ -42,6 +29,9 @@ window.pageOnLoad = function () {
                 name: 'Cron表达式',
                 align: 'center',
                 width: "150px",
+                formatter: function (value) {
+                    return '<span class="tag badge-neutral cron-tag">' + value + '</span>';
+                },
             },
             {
                 field: 'next',
@@ -58,14 +48,27 @@ window.pageOnLoad = function () {
                 align: 'center',
                 width: "100px",
                 formatter: function (value) {
-                    return value ? '是' : '否';
+                    return value
+                        ? '<span class="tag badge-info">循环</span>'
+                        : '<span class="tag badge-neutral">单次</span>';
                 },
             },
             {
                 field: 'times',
-                name: '执行次数',
+                name: '剩余执行次数',
                 align: 'center',
-                width: 'auto'
+                width: 'auto',
+                formatter: function (value) {
+
+                    if(value < 0){
+                        // 无限次
+                        return '<span class="badge badge-secondary">无限次（' + ( - value ) + '）</span>';
+                    }else{
+                        return '<span class="badge badge-primary">' + (value || 0) + ' 次</span>';
+                    }
+
+
+                },
             },
         ],
     });

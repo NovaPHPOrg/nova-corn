@@ -9,9 +9,14 @@
     }
 
     .corn-status {
-        font-size: 0.875rem;
-        color: rgb(var(--mdui-color-on-surface-variant));
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
         margin-bottom: 1rem;
+    }
+
+    .cron-tag {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
 </style>
 
@@ -22,7 +27,6 @@
             <span>定时任务</span>
         </div>
 
-        <div class="col-xs-12 corn-status" id="cornStatus"></div>
 
         <div class="col-xs-12">
             <div id="dataTable" class="table-card mt-2" style="width: 100%;min-height: 10rem"></div>
