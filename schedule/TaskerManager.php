@@ -100,7 +100,7 @@ class TaskerManager
         if ($cron === "") {
             Logger::info("Tasker: 该任务：$name 立即执行");
             //属于立即执行
-            go(function () use ($taskerAbstract) {
+            go("定时任务：{$name}", function () use ($taskerAbstract) {
                 try {
                     $taskerAbstract->onStart();
                 } catch (Throwable $exception) {
@@ -173,7 +173,8 @@ class TaskerManager
                 $cache->set($value->key, 1);
 
                 $key = $value->key;
-                go(function () use ($task, $key) {
+                $taskName = $value->name;
+                go("定时任务：{$taskName}", function () use ($task, $key) {
                     $cache = Context::instance()->cache;
                     try {
                         Context::instance()->isDebug() && Logger::info("Tasker 异步执行：" . __serialize($task));
