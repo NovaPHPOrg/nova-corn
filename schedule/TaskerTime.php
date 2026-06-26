@@ -30,6 +30,9 @@ class TaskerTime
      */
     public static function after(int $seconds): string
     {
+        if ($seconds == 0) {
+            $seconds = 1;
+        }
         $time = time() + $seconds;
 
         return

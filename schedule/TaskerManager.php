@@ -14,7 +14,6 @@ namespace nova\plugin\corn\schedule;
 
 use nova\framework\core\Context;
 use nova\framework\core\Logger;
-use nova\framework\exception\AppExitException;
 use nova\plugin\corn\schedule\Cron\CronExpression;
 
 use function nova\plugin\task\__serialize;
@@ -105,9 +104,7 @@ class TaskerManager
                     $taskerAbstract->onStart();
                 } catch (Throwable $exception) {
                     $taskerAbstract->onAbort($exception);
-                    if ($exception instanceof AppExitException) {
-                        throw $exception;
-                    }
+                    throw $exception; // 重抛让 go() 标记任务失败，异常不可吞
                 } finally {
                     $taskerAbstract->onStop();
                 }
@@ -183,9 +180,7 @@ class TaskerManager
                         $cache->delete($key);
                         $task->onAbort($exception);
                         Logger::error($exception->getMessage(), $exception->getTrace());
-                        if ($exception instanceof AppExitException) {
-                            throw $exception;
-                        }
+                        throw $exception; // 重抛让 go() 标记任务失败，异常不可吞
                     } finally {
                         $cache->delete($key);
                         Context::instance()->isDebug() && Logger::info("Tasker 异步执行结束：");
