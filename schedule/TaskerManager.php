@@ -98,20 +98,7 @@ class TaskerManager
         }
 
         if ($cron === "") {
-            Logger::info("Tasker: 该任务：$name 立即执行");
-            //属于立即执行
-            go("定时任务：{$name}", function () use ($taskerAbstract) {
-                try {
-                    $taskerAbstract->onStart();
-                } catch (Throwable $exception) {
-                    $taskerAbstract->onAbort($exception);
-                    throw $exception; // 重抛让 go() 标记任务失败，异常不可吞
-                } finally {
-                    $taskerAbstract->onStop();
-                }
-
-            }, $taskerAbstract->getTimeOut());
-            return '';
+            $cron = TaskerTime::after(10);
         }
 
         $task = new TaskInfo();
