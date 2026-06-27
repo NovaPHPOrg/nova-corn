@@ -32,6 +32,7 @@ use Throwable;
 class TaskerManager
 {
     public const string TASK_LIST = "tasker_list";
+    public const int MAX_CONCURRENT = 5;
 
     /**
      * 清空所有定时任务
