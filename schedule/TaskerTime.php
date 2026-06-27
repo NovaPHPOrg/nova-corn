@@ -24,16 +24,13 @@ namespace nova\plugin\corn\schedule;
 class TaskerTime
 {
     /**
-     * 指定多少秒之后执行（实际只能精确到分钟）
+     * 指定多少秒之后执行（精确到分钟，最少延迟1分钟以确保调度器能扫描到）
      * @param  int    $seconds
      * @return string
      */
     public static function after(int $seconds): string
     {
-        if ($seconds == 0) {
-            $seconds = 1;
-        }
-        $time = time() + $seconds;
+        $time = time() + max($seconds, 60);
 
         return
             (int)date('i', $time) . ' ' .

@@ -17,8 +17,9 @@ use nova\framework\core\Logger;
 use nova\plugin\corn\schedule\Cron\CronExpression;
 
 use function nova\plugin\task\__serialize;
-
 use function nova\plugin\task\go;
+
+use nova\plugin\task\TaskLogger;
 
 use Throwable;
 
@@ -96,11 +97,6 @@ class TaskerManager
         if (empty($name) || TaskerManager::has($name)) {
             return '';
         }
-
-        if ($cron === "") {
-            $cron = TaskerTime::after(10);
-        }
-
         $task = new TaskInfo();
         $task->name = $name;
         $task->cron = $cron;
@@ -108,7 +104,13 @@ class TaskerManager
         $task->loop = $times == -1;
         $task->key = uniqid("task_");
 
-        $task->next = CronExpression::factory($cron)->getNextRunDate()->getTimestamp();
+        if (!empty($cron)) {
+            $next = CronExpression::factory($cron)->getNextRunDate()->getTimestamp();
+        } else {
+            $next = time() + 10;
+        }
+
+        $task->next = $next;
         $task->closure = $taskerAbstract;
         $list = self::list();
         $list[] = $task;
@@ -132,27 +134,44 @@ class TaskerManager
         if (Context::instance()->isDebug()) {
             Logger::info("task list", $data);
         }
+        $cache = Context::instance()->cache;
+        $running = count(TaskLogger::running())  - 1;
+        $max = 6;
         /**
          * @var $value TaskInfo
          */
         foreach ($data as $k => $value) {
             //次序=0
             if ($value->times === 0) {
-                Context::instance()->isDebug() && Logger::info("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务执行完毕");
+                Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务执行完毕");
                 unset($data[$k]);
+                $cache->delete($value->key);
             } elseif ($value->next <= time()) {
-                $time = CronExpression::factory($value->cron)->getNextRunDate()->getTimestamp();
-                $value->next = $time;
-                $value->times--;
-                Context::instance()->isDebug() && Logger::info("Tasker 执行完成后，下次执行时间为：" . date("Y-m-d H:i:s", $time));
+
+                if ($running >= $max) {
+                    $value->next = $value->next + 60;
+                    Logger::debug("Tasker 任务目前总数过多，为了避免高负载，将该任务（{$value->name}）延迟1分钟：".date("Y-m-d H:i:s", $value->next));
+                    continue;
+                }
+
+                if (!empty($value->cron)) {
+                    $time = CronExpression::factory($value->cron)->getNextRunDate()->getTimestamp();
+                    $value->next = $time;
+                    $value->times--;
+                    Logger::debug("Tasker 执行完成后，下次执行时间为：" . date("Y-m-d H:i:s", $time));
+                } else {
+                    $value->times = 0;
+                    Logger::debug("Tasker 执行完成后，由于没有Cron表达式，直接结束");
+                }
+
                 /**
                  * @var TaskerAbstract $task
                  */
                 $task = $value->closure;
                 $timeout = $task->getTimeOut();
-                $cache = Context::instance()->cache;
+
                 if ($cache->get($value->key) !== null) {
-                    Context::instance()->isDebug() && Logger::info("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
+                    Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
                     continue;
                 }
                 $cache->set($value->key, 1);
