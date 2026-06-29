@@ -16,7 +16,6 @@ return [
     ],
     "config" => [
         "framework_start" => [
-            "nova\\plugin\\corn\\Schedule",
             "nova\\plugin\\corn\\CornManager",
         ]
     ]
