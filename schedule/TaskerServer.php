@@ -33,7 +33,7 @@ class TaskerServer
             Logger::info("No TaskerServer is running, start a new one");
             $cache->set(self::SERVER_KEY, getmypid(), 20);
             if (isWorkerman()) {
-                Workerman\Timer::add(10, function () use ($cache) {
+                \Workerman\Timer::add(10, function () use ($cache) {
                     $pid = getmypid();
                     $cache->set(self::SERVER_KEY, $pid, 15);
                     Context::instance()->cache = $cache;
