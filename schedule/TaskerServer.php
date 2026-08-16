@@ -36,9 +36,21 @@ class TaskerServer
                 \Workerman\Timer::add(10, function () use ($cache) {
                     $pid = getmypid();
                     $cache->set(self::SERVER_KEY, $pid, 15);
-                    Context::instance()->cache = $cache;
-                    TaskerManager::run();
-                    Logger::info("TaskerServer({$pid}) is running in the background");
+                    $ctx = Context::instance();
+                    $ctx->cache = $cache;
+                    try {
+                        TaskerManager::run();
+                    } finally {
+                        // Timer 回调里没有请求生命周期，全局 Context 必须用完即毁：
+                        // 否则它会带着旧的配置快照驻留，直到下个请求到来时才析构，
+                        // 一旦期间任务改动过配置，析构写盘会把用户新保存的配置覆盖掉
+                        global $context;
+                        if ($context === $ctx) {
+                            $context->destroy();
+                            $context = null;
+                        }
+                        Logger::info("TaskerServer({$pid}) is running in the background");
+                    }
                 });
             } else {
                 go("定时任务调度器", function () {
