@@ -15,13 +15,11 @@ namespace nova\plugin\corn\schedule;
 use nova\framework\core\Context;
 use nova\framework\core\Logger;
 use nova\plugin\corn\schedule\Cron\CronExpression;
-
+use nova\plugin\task\TaskLogger;
+use RuntimeException;
+use Throwable;
 use function nova\plugin\task\__serialize;
 use function nova\plugin\task\go;
-
-use nova\plugin\task\TaskLogger;
-
-use Throwable;
 
 /**
  * Class Tasker
@@ -41,7 +39,9 @@ class TaskerManager
      */
     public static function clean(): void
     {
-        Context::instance()->cache->delete(self::TASK_LIST);
+        self::withTaskListLock(function (): void {
+            Context::instance()->cache->delete(self::TASK_LIST);
+        });
     }
 
     /**
@@ -70,17 +70,19 @@ class TaskerManager
      */
     public static function del($key): void
     {
-        $list = self::list();
-        /**
-         * @var $value TaskInfo
-         */
-        $new = [];
-        foreach ($list as $value) {
-            if ($key !== $value->key && $key !== $value->name) {
-                $new[] = $value;
+        self::withTaskListLock(function () use ($key): void {
+            $list = self::listUnlocked();
+            /**
+             * @var $value TaskInfo
+             */
+            $new = [];
+            foreach ($list as $value) {
+                if ($key !== $value->key && $key !== $value->name) {
+                    $new[] = $value;
+                }
             }
-        }
-        Context::instance()->cache->set(self::TASK_LIST, $new);
+            Context::instance()->cache->set(self::TASK_LIST, $new);
+        });
     }
 
     /**
@@ -94,33 +96,42 @@ class TaskerManager
      */
     public static function add(string $cron, TaskerAbstract $taskerAbstract, string $name, int $times = 1): string
     {
-        if (empty($name) || TaskerManager::has($name)) {
-            return '';
-        }
-        $task = new TaskInfo();
-        $task->name = $name;
-        $task->cron = $cron;
-        $task->times = $times;
-        $task->loop = $times == -1;
-        $task->key = uniqid("task_");
+        return self::withTaskListLock(function () use ($cron, $taskerAbstract, $name, $times): string {
+            if (empty($name)) {
+                return '';
+            }
 
-        if (!empty($cron)) {
-            $next = CronExpression::factory($cron)->getNextRunDate()->getTimestamp();
-        } else {
-            $next = time() + 10;
-        }
+            foreach (self::listUnlocked() as $value) {
+                if ($name === $value->key || $name === $value->name) {
+                    return '';
+                }
+            }
 
-        $task->next = $next;
-        $task->closure = $taskerAbstract;
-        $list = self::list();
-        $list[] = $task;
+            $task = new TaskInfo();
+            $task->name = $name;
+            $task->cron = $cron;
+            $task->times = $times;
+            $task->loop = $times == -1;
+            $task->key = uniqid("task_");
 
-        Context::instance()->cache->set(self::TASK_LIST, $list);
-        if (Context::instance()->isDebug()) {
-            Logger::info("Tasker 添加定时任务：$name => " . get_class($taskerAbstract));
-            Logger::info("Tasker 初次添加后，执行时间为：" . date("Y-m-d H:i:s", $task->next));
-        }
-        return $task->key;
+            if (!empty($cron)) {
+                $next = CronExpression::factory($cron)->getNextRunDate()->getTimestamp();
+            } else {
+                $next = time() + 10;
+            }
+
+            $task->next = $next;
+            $task->closure = $taskerAbstract;
+            $list = self::listUnlocked();
+            $list[] = $task;
+
+            Context::instance()->cache->set(self::TASK_LIST, $list);
+            if (Context::instance()->isDebug()) {
+                Logger::info("Tasker 添加定时任务：$name => " . get_class($taskerAbstract));
+                Logger::info("Tasker 初次添加后，执行时间为：" . date("Y-m-d H:i:s", $task->next));
+            }
+            return $task->key;
+        });
     }
 
     /**
@@ -129,18 +140,18 @@ class TaskerManager
      */
     public static function run(): void
     {
-
-        $data = self::list();
-        if (Context::instance()->isDebug()) {
-            Logger::info("task list", $data);
-        }
-        $cache = Context::instance()->cache;
-        $running = count(TaskLogger::running())  - 1;
-        $max = 6;
-        /**
-         * @var $value TaskInfo
-         */
-        foreach ($data as $k => $value) {
+        self::withTaskListLock(function (): void {
+            $data = self::listUnlocked();
+            if (Context::instance()->isDebug()) {
+                Logger::info("task list", $data);
+            }
+            $cache = Context::instance()->cache;
+            $running = count(TaskLogger::running()) - 1;
+            $max = 6;
+            /**
+             * @var $value TaskInfo
+             */
+            foreach ($data as $k => $value) {
             //次序=0
             if ($value->times === 0) {
                 Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务执行完毕");
@@ -196,8 +207,9 @@ class TaskerManager
 
                 }, $timeout);
             }
-        }
-        Context::instance()->cache->set(self::TASK_LIST, $data);
+            }
+            Context::instance()->cache->set(self::TASK_LIST, $data);
+        });
 
     }
 
@@ -254,7 +266,50 @@ class TaskerManager
      */
     public static function list(): array
     {
+        return self::listUnlocked();
+    }
+
+    /**
+     * 在任务列表锁内更新指定任务，避免调用方读改写旧快照。
+     */
+    public static function update(string $key, callable $update): bool
+    {
+        return self::withTaskListLock(function () use ($key, $update): bool {
+            $list = self::listUnlocked();
+            foreach ($list as $item) {
+                if ($item->key === $key) {
+                    $update($item);
+                    Context::instance()->cache->set(self::TASK_LIST, $list);
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    /** @return array<int, TaskInfo> */
+    private static function listUnlocked(): array
+    {
         return Context::instance()->cache->get(self::TASK_LIST, []) ?: [];
+    }
+
+    private static function withTaskListLock(callable $operation): mixed
+    {
+        $lockPath = ROOT_PATH . '/runtime/tasker_list.lock';
+        $lock = fopen($lockPath, 'c');
+        if ($lock === false) {
+            throw new RuntimeException('Unable to open task list lock: ' . $lockPath);
+        }
+
+        try {
+            if (!flock($lock, LOCK_EX)) {
+                throw new RuntimeException('Unable to acquire task list lock: ' . $lockPath);
+            }
+            return $operation();
+        } finally {
+            flock($lock, LOCK_UN);
+            fclose($lock);
+        }
     }
 
 }
