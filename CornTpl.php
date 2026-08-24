@@ -7,15 +7,17 @@ namespace nova\plugin\corn;
 use nova\framework\core\Instance;
 use nova\framework\http\Request;
 use nova\framework\http\Response;
+use nova\framework\route\Route;
 use nova\plugin\login\AdminPageInterface;
 use nova\plugin\tpl\ViewResponse;
+use function nova\framework\route;
 
 class CornTpl extends Instance implements AdminPageInterface
 {
     public function registerRouter(string $model, string $controller): void
     {
-        $default = \nova\framework\route($model, $controller, 'init');
-        \nova\framework\route\Route::getInstance()
+        $default = route($model, $controller, 'init');
+        Route::getInstance()
             ->get('/corn/list', $default);
     }
 

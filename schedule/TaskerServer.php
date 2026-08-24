@@ -14,7 +14,7 @@ namespace nova\plugin\corn\schedule;
 
 use nova\framework\core\Context;
 use nova\framework\core\Logger;
-
+use Workerman\Timer;
 use function nova\framework\isWorkerman;
 use function nova\plugin\task\go;
 
@@ -33,7 +33,7 @@ class TaskerServer
             Logger::info("No TaskerServer is running, start a new one");
             $cache->set(self::SERVER_KEY, getmypid(), 20);
             if (isWorkerman()) {
-                \Workerman\Timer::add(10, function () use ($cache) {
+                Timer::add(10, function () use ($cache) {
                     $pid = getmypid();
                     $cache->set(self::SERVER_KEY, $pid, 15);
                     $ctx = Context::instance();
