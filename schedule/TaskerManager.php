@@ -167,8 +167,12 @@ class TaskerManager
                 $timeout = $task->getTimeOut();
 
                 if ($cache->get(self::runningKey($value->key)) !== null) {
-                    Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
-                    continue;
+                    if (self::hasAliveScheduledTask($value->name)) {
+                        Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
+                        continue;
+                    }
+                    $cache->delete(self::runningKey($value->key));
+                    Logger::warning("Tasker 清理僵尸锁：{$value->name} [{$value->key}]");
                 }
                 $cache->set(self::runningKey($value->key), 1);
                 self::save($value);
@@ -275,5 +279,16 @@ class TaskerManager
         return self::RUNNING_PREFIX . $key;
     }
 
+    /** 定时任务在 TaskLogger 中是否仍有存活的 running 记录。 */
+    private static function hasAliveScheduledTask(string $name): bool
+    {
+        $scheduled = '定时任务：' . $name;
+        foreach (TaskLogger::running() as $record) {
+            if (($record['name'] ?? '') === $scheduled) {
+                return true;
+            }
+        }
 
+        return false;
+    }
 }
