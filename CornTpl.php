@@ -7,10 +7,12 @@ namespace nova\plugin\corn;
 use nova\framework\core\Instance;
 use nova\framework\http\Request;
 use nova\framework\http\Response;
+
+use function nova\framework\route;
+
 use nova\framework\route\Route;
 use nova\plugin\login\AdminPageInterface;
 use nova\plugin\tpl\ViewResponse;
-use function nova\framework\route;
 
 class CornTpl extends Instance implements AdminPageInterface
 {

@@ -15,10 +15,12 @@ namespace nova\plugin\corn\schedule;
 use nova\framework\core\Context;
 use nova\framework\core\Logger;
 use nova\plugin\corn\schedule\Cron\CronExpression;
-use nova\plugin\task\TaskLogger;
-use Throwable;
+
 use function nova\plugin\task\__serialize;
 use function nova\plugin\task\go;
+
+use nova\plugin\task\TaskLogger;
+use Throwable;
 
 /**
  * Class Tasker
@@ -248,7 +250,7 @@ class TaskerManager
     {
         return array_values(array_filter(
             Context::instance()->cache->getAll(rtrim(self::TASK_PREFIX, '/')),
-            static fn(mixed $task): bool => $task instanceof TaskInfo
+            static fn (mixed $task): bool => $task instanceof TaskInfo
         ));
     }
 
