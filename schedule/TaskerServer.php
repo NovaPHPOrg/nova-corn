@@ -24,6 +24,9 @@ class TaskerServer
 {
     public const string SERVER_KEY = "tasker_server";
 
+    /** FPM scheduler max lifetime in seconds; then recycle onto a new worker. */
+    private const int MAX_LIFETIME = 600;
+
     /**
      * 启动任务扫描服务
      * @return void
@@ -56,17 +59,28 @@ class TaskerServer
                 });
             } else {
                 go("定时任务调度器", function () {
-
                     $cache = Context::instance()->cache;
+                    $startedAt = time();
 
                     do {
                         $pid = getmypid();
                         $cache->set(self::SERVER_KEY, $pid, 15);
-                        TaskerManager::run();
+                        try {
+                            TaskerManager::run();
+                        } catch (\Throwable $e) {
+                            Logger::error("TaskerServer run failed: " . $e->getMessage());
+                        }
                         sleep(10);
                         Logger::info("TaskerServer({$pid}) is running in the background");
+                        if ((time() - $startedAt) >= self::MAX_LIFETIME) {
+                            Logger::info("TaskerServer({$pid}) lifetime reached, recycle");
+                            if ($cache->get(self::SERVER_KEY) === $pid) {
+                                $cache->delete(self::SERVER_KEY);
+                            }
+                            break;
+                        }
                     } while ($cache->get(self::SERVER_KEY) === $pid);
-                }, 0);
+                }, self::MAX_LIFETIME);
             }
         }
     }

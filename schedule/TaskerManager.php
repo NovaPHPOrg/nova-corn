@@ -139,6 +139,7 @@ class TaskerManager
         $running = max(0, count(TaskLogger::running()) - 1);
         /** @var TaskInfo $value */
         foreach ($data as $value) {
+            try {
             //次序=0
             if ($value->times === 0) {
                 Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务执行完毕");
@@ -199,6 +200,9 @@ class TaskerManager
                     }
 
                 }, $timeout);
+            }
+            } catch (Throwable $e) {
+                Logger::error("Tasker 跳过任务 {$value->name}: " . $e->getMessage());
             }
         }
     }
