@@ -58,6 +58,7 @@ class TaskerServer
                     }
                 });
             } else {
+                // go timeout 要比循环寿命多几十秒，留出 curl /task/start 拉起下一任的时间
                 go("定时任务调度器", function () {
                     $cache = Context::instance()->cache;
                     $startedAt = time();
@@ -77,10 +78,12 @@ class TaskerServer
                             if ($cache->get(self::SERVER_KEY) === $pid) {
                                 $cache->delete(self::SERVER_KEY);
                             }
+                            // 不依赖页面访问：自己再拉起一轮新的 /task/start
+                            self::start();
                             break;
                         }
                     } while ($cache->get(self::SERVER_KEY) === $pid);
-                }, self::MAX_LIFETIME);
+                }, self::MAX_LIFETIME + 30);
             }
         }
     }
