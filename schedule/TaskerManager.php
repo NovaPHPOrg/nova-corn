@@ -140,67 +140,67 @@ class TaskerManager
         /** @var TaskInfo $value */
         foreach ($data as $value) {
             try {
-            //次序=0
-            if ($value->times === 0) {
-                Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务执行完毕");
-                $cache->delete(self::cacheKey($value->key));
-            } elseif ($value->next <= time()) {
+                //次序=0
+                if ($value->times === 0) {
+                    Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务执行完毕");
+                    $cache->delete(self::cacheKey($value->key));
+                } elseif ($value->next <= time()) {
 
-                if ($running >= self::MAX_CONCURRENT) {
-                    $value->next = $value->next + 60;
-                    Logger::debug("Tasker 任务目前总数过多，为了避免高负载，将该任务（{$value->name}）延迟1分钟：".date("Y-m-d H:i:s", $value->next));
-                    self::save($value);
-                    continue;
-                }
-
-                if (!empty($value->cron)) {
-                    $time = CronExpression::factory($value->cron)->getNextRunDate()->getTimestamp();
-                    $value->next = $time;
-                    $value->times--;
-                    Logger::debug("Tasker 执行完成后，下次执行时间为：" . date("Y-m-d H:i:s", $time));
-                } else {
-                    $value->times = 0;
-                    Logger::debug("Tasker 执行完成后，由于没有Cron表达式，直接结束");
-                }
-
-                /**
-                 * @var TaskerAbstract $task
-                 */
-                $task = $value->closure;
-                $timeout = $task->getTimeOut();
-
-                if ($cache->get(self::runningKey($value->key)) !== null) {
-                    if (self::hasAliveScheduledTask($value->name)) {
-                        Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
+                    if ($running >= self::MAX_CONCURRENT) {
+                        $value->next = $value->next + 60;
+                        Logger::debug("Tasker 任务目前总数过多，为了避免高负载，将该任务（{$value->name}）延迟1分钟：".date("Y-m-d H:i:s", $value->next));
+                        self::save($value);
                         continue;
                     }
-                    $cache->delete(self::runningKey($value->key));
-                    Logger::warning("Tasker 清理僵尸锁：{$value->name} [{$value->key}]");
-                }
-                $cache->set(self::runningKey($value->key), 1);
-                self::save($value);
-                ++$running;
 
-                $key = $value->key;
-                $taskName = $value->name;
-                go("定时任务：{$taskName}", function () use ($task, $key) {
-                    $cache = Context::instance()->cache;
-                    try {
-                        Context::instance()->isDebug() && Logger::info("Tasker 异步执行：" . __serialize($task));
-                        $task->onStart();
-                    } catch (Throwable $exception) {
-                        $cache->delete(self::runningKey($key));
-                        $task->onAbort($exception);
-                        Logger::error($exception->getMessage(), $exception->getTrace());
-                        throw $exception; // 重抛让 go() 标记任务失败，异常不可吞
-                    } finally {
-                        $cache->delete(self::runningKey($key));
-                        Context::instance()->isDebug() && Logger::info("Tasker 异步执行结束：");
-                        $task->onStop();
+                    if (!empty($value->cron)) {
+                        $time = CronExpression::factory($value->cron)->getNextRunDate()->getTimestamp();
+                        $value->next = $time;
+                        $value->times--;
+                        Logger::debug("Tasker 执行完成后，下次执行时间为：" . date("Y-m-d H:i:s", $time));
+                    } else {
+                        $value->times = 0;
+                        Logger::debug("Tasker 执行完成后，由于没有Cron表达式，直接结束");
                     }
 
-                }, $timeout);
-            }
+                    /**
+                     * @var TaskerAbstract $task
+                     */
+                    $task = $value->closure;
+                    $timeout = $task->getTimeOut();
+
+                    if ($cache->get(self::runningKey($value->key)) !== null) {
+                        if (self::hasAliveScheduledTask($value->name)) {
+                            Logger::debug("Tasker 该ID ({$value->name})[{$value->key}] 的定时任务正在执行中");
+                            continue;
+                        }
+                        $cache->delete(self::runningKey($value->key));
+                        Logger::warning("Tasker 清理僵尸锁：{$value->name} [{$value->key}]");
+                    }
+                    $cache->set(self::runningKey($value->key), 1);
+                    self::save($value);
+                    ++$running;
+
+                    $key = $value->key;
+                    $taskName = $value->name;
+                    go("定时任务：{$taskName}", function () use ($task, $key) {
+                        $cache = Context::instance()->cache;
+                        try {
+                            Context::instance()->isDebug() && Logger::info("Tasker 异步执行：" . __serialize($task));
+                            $task->onStart();
+                        } catch (Throwable $exception) {
+                            $cache->delete(self::runningKey($key));
+                            $task->onAbort($exception);
+                            Logger::error($exception->getMessage(), $exception->getTrace());
+                            throw $exception; // 重抛让 go() 标记任务失败，异常不可吞
+                        } finally {
+                            $cache->delete(self::runningKey($key));
+                            Context::instance()->isDebug() && Logger::info("Tasker 异步执行结束：");
+                            $task->onStop();
+                        }
+
+                    }, $timeout);
+                }
             } catch (Throwable $e) {
                 Logger::error("Tasker 跳过任务 {$value->name}: " . $e->getMessage());
             }
