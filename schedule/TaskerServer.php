@@ -58,7 +58,7 @@ class TaskerServer
                     }
                 });
             } else {
-                // go timeout 要比循环寿命多几十秒，留出 curl /task/start 拉起下一任的时间
+                // 正常轮换不设硬超时，扫描和交接耗时不能让调度器失败。
                 go("定时任务调度器", function () {
                     $cache = Context::instance()->cache;
                     $startedAt = time();
@@ -83,7 +83,7 @@ class TaskerServer
                             break;
                         }
                     } while ($cache->get(self::SERVER_KEY) === $pid);
-                }, self::MAX_LIFETIME + 30);
+                }, 0);
             }
         }
     }
