@@ -33,17 +33,27 @@ class TaskerServer
      */
     public static function start(): void
     {
+        if (TaskerConfig::mode() !== 'internal') {
+            return;
+        }
         $cache = Context::instance()->cache;
         if ($cache->get(self::SERVER_KEY) === null) {
             Logger::info("No TaskerServer is running, start a new one");
             $cache->set(self::SERVER_KEY, getmypid(), 20);
             if (isWorkerman()) {
-                Timer::add(10, function () use ($cache) {
+                $timerId = Timer::add(10, function () use ($cache, &$timerId) {
                     $pid = getmypid();
-                    $cache->set(self::SERVER_KEY, $pid, 15);
                     $ctx = Context::instance();
                     $ctx->cache = $cache;
                     try {
+                        if (TaskerConfig::mode(true) !== 'internal') {
+                            Timer::del($timerId);
+                            if ($cache->get(self::SERVER_KEY) === $pid) {
+                                $cache->delete(self::SERVER_KEY);
+                            }
+                            return;
+                        }
+                        $cache->set(self::SERVER_KEY, $pid, 15);
                         TaskerManager::run();
                     } finally {
                         // Timer 回调里没有请求生命周期，全局 Context 必须用完即毁：
@@ -65,6 +75,13 @@ class TaskerServer
 
                     do {
                         $pid = getmypid();
+                        if (TaskerConfig::mode(true) !== 'internal') {
+                            if ($cache->get(self::SERVER_KEY) === $pid) {
+                                $cache->delete(self::SERVER_KEY);
+                            }
+                            Logger::info("TaskerServer({$pid}) stopped after scheduling mode changed");
+                            break;
+                        }
                         $cache->set(self::SERVER_KEY, $pid, 15);
                         try {
                             TaskerManager::run();
@@ -92,7 +109,7 @@ class TaskerServer
     public static function stop(): void
     {
         $cache = Context::instance()->cache;
-        $cache->set(self::SERVER_KEY, getmypid());
+        $cache->delete(self::SERVER_KEY);
     }
 
 }

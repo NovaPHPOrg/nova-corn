@@ -20,16 +20,22 @@ class CornTpl extends Instance implements AdminPageInterface
     {
         $default = route($model, $controller, 'init');
         Route::getInstance()
-            ->get('/corn/list', $default);
+            ->get('/corn/list', $default)
+            ->get('/corn/settings', $default);
     }
 
     public function route(ViewResponse $view, Request $request): ?Response
     {
-        if ($request->getPath() !== '/corn/list') {
+        $templates = [
+            '/corn/list' => 'list',
+            '/corn/settings' => 'settings',
+        ];
+        $template = $templates[$request->getPath()] ?? null;
+        if ($template === null) {
             return null;
         }
 
-        return $view->asTpl(ROOT_PATH . DS . 'nova/plugin/corn/tpl/list');
+        return $view->asTpl(ROOT_PATH . DS . 'nova/plugin/corn/tpl/' . $template);
     }
 
     public function menu(): array
@@ -37,8 +43,20 @@ class CornTpl extends Instance implements AdminPageInterface
         return [
             'title' => '定时任务',
             'icon' => 'schedule',
-            'url' => '/corn/list',
-            'pjax' => true,
+            'sub' => [
+                [
+                    'title' => '任务列表',
+                    'icon' => 'list',
+                    'url' => '/corn/list',
+                    'pjax' => true,
+                ],
+                [
+                    'title' => '调度设置',
+                    'icon' => 'settings',
+                    'url' => '/corn/settings',
+                    'pjax' => true,
+                ],
+            ],
         ];
     }
 }

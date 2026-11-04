@@ -20,6 +20,7 @@ use function nova\plugin\task\__serialize;
 use function nova\plugin\task\go;
 
 use nova\plugin\task\TaskLogger;
+use RuntimeException;
 use Throwable;
 
 /**
@@ -127,16 +128,53 @@ class TaskerManager
 
     /**
      * 执行一次遍历数据库
-     * @return void
+     * @return bool false 表示其他进程正在扫描
      */
-    public static function run(): void
+    public static function run(): bool
+    {
+        return self::synchronize(static function (): void {
+            self::scan();
+            Context::instance()->cache->set('tasker_last_tick', time());
+        });
+    }
+
+    public static function synchronize(callable $callback): bool
+    {
+        $lock = fopen(RUNTIME_PATH . DIRECTORY_SEPARATOR . 'tasker_scan.lock', 'c');
+        if ($lock === false) {
+            throw new RuntimeException('Unable to open scheduler scan lock');
+        }
+        try {
+            if (!flock($lock, LOCK_EX | LOCK_NB, $wouldBlock)) {
+                if (!$wouldBlock) {
+                    throw new RuntimeException('Unable to acquire scheduler scan lock');
+                }
+                Logger::debug('Tasker 调度状态正在更新，跳过重复触发');
+                return false;
+            }
+            try {
+                $callback();
+                return true;
+            } finally {
+                // CLI fork 的子进程会继承文件描述符，必须显式释放扫描锁。
+                flock($lock, LOCK_UN);
+            }
+        } finally {
+            fclose($lock);
+        }
+    }
+
+    private static function scan(): void
     {
         $data = self::list();
         if (Context::instance()->isDebug()) {
             Logger::info('task list', $data);
         }
         $cache = Context::instance()->cache;
-        $running = max(0, count(TaskLogger::running()) - 1);
+        $running = count(array_filter(
+            TaskLogger::running(),
+            static fn (array $record): bool => $record['name'] !== '定时任务调度器'
+        ));
         /** @var TaskInfo $value */
         foreach ($data as $value) {
             try {
