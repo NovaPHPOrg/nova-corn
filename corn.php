@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use app\sync\SyncTaskSchedule;
+use nova\framework\App;
 use nova\framework\core\Config;
 use nova\framework\core\Context;
 use nova\framework\core\Loader;
@@ -66,7 +66,7 @@ do {
             $exitCode = $started && !$once ? 0 : 1;
             break;
         }
-        SyncTaskSchedule::register();
+        App::getInstance()->initializeFramework();
         $scanned = TaskerManager::run();
         $started = true;
         echo date('Y-m-d H:i:s') . ($scanned ? " task list scanned\n" : " scan already running, skipped\n");
