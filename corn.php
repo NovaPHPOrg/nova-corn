@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use nova\framework\App;
 use nova\framework\core\Config;
 use nova\framework\core\Context;
 use nova\framework\core\Loader;
 use nova\framework\core\Logger;
+use nova\plugin\corn\CornManager;
 use nova\plugin\corn\schedule\TaskerConfig;
 use nova\plugin\corn\schedule\TaskerManager;
 
@@ -66,7 +66,7 @@ do {
             $exitCode = $started && !$once ? 0 : 1;
             break;
         }
-        App::getInstance()->initializeFramework();
+        CornManager::bootApplication();
         $scanned = TaskerManager::run();
         $started = true;
         echo date('Y-m-d H:i:s') . ($scanned ? " task list scanned\n" : " scan already running, skipped\n");

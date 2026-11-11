@@ -11,3 +11,5 @@
 ## CLI 任务注册
 
 选中 CLI 调度时，每轮扫描前执行框架初始化，包括插件注册、应用的 `onFrameworkStart()` 钩子及 `framework.start` 事件，不执行 HTTP 路由分发。业务任务由应用启动钩子注册，插件不引用具体业务类，也不需要额外的任务注册回调配置。启动钩子失败时停止本轮扫描并以非零状态退出。
+
+启动过程通过 `CornManager::bootApplication()` 复用框架公开的事件接口，应用的 `onFrameworkStart()` 必须为公开方法。不调用框架私有的 `App::initializeFramework()`，也不通过反射绕过访问限制。
